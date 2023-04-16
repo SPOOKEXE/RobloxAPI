@@ -1,6 +1,4 @@
 
-# https://github.com/pozm/Synapse/wiki/Synapse-UI-Websocket
-
 from websockets.sync.client import connect
 from os import path
 from json import loads as json_loads, dumps as json_dumps
@@ -52,17 +50,25 @@ class SynapseAPI:
 	@staticmethod
 	def attach() -> bool:
 		try:
+			print("Connecting to websocket.")
 			websocket = connect(BASE_SOCKET_ADDRESS + 'attach')
 		except:
 			print("Synapse's websocket is not currently available.")
 			return False
 
-		websocket.send("ATTACH") # ask synapse to attach
+		print("Asking Synapse about current attach status.")
+		try:
+			websocket.send("ATTACH") # ask synapse to attach
+		except:
+			print("Failed to send data through websocket.")
+			websocket.close()
+			return False
 
 		success=False
 		while not success:
 			try:
 				msg = websocket.recv(timeout=DEFAULT_TIMEOUT_PERIOD)
+				print(msg)
 				if msg == "ALREADY_ATTACHED" or msg == "READY":
 					success=True
 			except TimeoutError:
@@ -75,24 +81,40 @@ class SynapseAPI:
 	# execute code into roblox
 	@staticmethod
 	def execute(lua_code : str) -> bool:
+		print("Checking if Synapse is attached.")
+		if not SynapseAPI.attach():
+			print("Could not attach Synapse for code execution.")
+			return False
+
 		try:
+			print("Connecting to Synapse execution resource.")
 			websocket = connect(BASE_SOCKET_ADDRESS + 'execute')
 		except:
 			print("Synapse's websocket is not currently available.")
 			return False
 		
-		websocket.send(lua_code)
+		print("Sending code to the websocket.")
+		try:
+			websocket.send(lua_code)
+		except:
+			print("Failed to send data through websocket.")
+			websocket.close()
+			return False
 
 		success=False
 		while not success:
 			try:
 				msg = websocket.recv(timeout=DEFAULT_TIMEOUT_PERIOD)
+				print(msg)
 				if msg == "OK":
 					success=True
 			except TimeoutError:
 				print("Synapse is not currently available.")
 				break
 
+		print(success and "Code was executed" or "Code failed to execute.")
+
+		websocket.close()
 		return success
 
 def RunSynapseTest() -> bool:
@@ -105,7 +127,7 @@ def RunSynapseTest() -> bool:
 		return False
 
 	print("Attached to Roblox.")
-	
+
 	print("Synapse is attached and ready to execute.")
 	# test the execute code
 	success = api.execute("print('Synapse successfully executed!')")

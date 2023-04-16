@@ -1,3 +1,3 @@
-std = "roblox"
+std = "roblox+robloxsyn"
 [rules]
 global_usage = "allow"
