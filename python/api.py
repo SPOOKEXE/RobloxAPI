@@ -107,4 +107,6 @@ class DataAPI:
 	def ExecuteCodeInDevConsole() -> None:
 		pass
 
-print( DataAPI.IsAPIAvailable() )
+for _ in range(10):
+	print( DataAPI.IsAPIAvailable() )
+	time.sleep(2)
